@@ -1,0 +1,85 @@
+// Set pin numbers for ultrasonic sensor, LED, and trigger duration
+const int echoPin = 3;
+const int triggerPin = 2;
+const int ledPin = 13;
+const int triggerDuration = 10; // Duration of the trigger pulse in microseconds
+
+// Flag to indicate whether distance is below threshold
+volatile bool distanceBelowThreshold = false;
+
+// Declare the start and end time variables as static
+static unsigned long startTime = 0;
+static unsigned long endTime = 0;
+
+void setup() {
+  // Initialize serial communication
+  Serial.begin(9600);
+  
+  // Set the trigger pin as an output
+  pinMode(triggerPin, OUTPUT);
+  
+  // Set the echo pin as an input
+  pinMode(echoPin, INPUT);
+  
+  // Set the LED pin as an output
+  pinMode(ledPin, OUTPUT);
+
+  // Attach the interrupt for the echo pin to the echoInterrupt() function
+  attachInterrupt(digitalPinToInterrupt(echoPin), echoInterrupt, CHANGE);
+}
+
+void loop() {
+  // Generate a trigger pulse
+  digitalWrite(triggerPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(triggerPin, HIGH);
+  delayMicroseconds(triggerDuration);
+  digitalWrite(triggerPin, LOW);
+
+  // Wait for the echo pin to go high and then low
+  while (digitalRead(echoPin) == LOW);
+  startTime = micros();
+  while (digitalRead(echoPin) == HIGH);
+  endTime = micros();
+
+  // Calculate the distance in cm
+  long duration = endTime - startTime;
+  int distance = duration / 58;
+
+  // If distance is below threshold, set the distanceBelowThreshold flag to true
+  if (distance < 50) {
+    distanceBelowThreshold = true;
+  } else {
+    distanceBelowThreshold = false;
+  }
+}
+
+void echoInterrupt() {
+  // Read the current state of the echo pin
+  int echoState = digitalRead(echoPin);
+
+  // If the echo pin is high, record the current time
+  if (echoState == HIGH) {
+    startTime = micros();
+  } else {
+    // If the echo pin is low, calculate the duration and distance
+    endTime = micros();
+    long duration = endTime - startTime;
+    int distance = duration / 58;
+
+    // If distance is below threshold, blink the LED and print a message to the serial monitor
+    if (distance < 50) {
+      Serial.println("Distance below threshold!");
+      blinkLed(ledPin, 3);
+    }
+  }
+}
+
+void blinkLed(int pin, int times) {
+  for (int i = 0; i < times; i++) {
+    digitalWrite(pin, HIGH);
+    delay(500);
+    digitalWrite(pin, LOW);
+    delay(500);
+  }
+}
