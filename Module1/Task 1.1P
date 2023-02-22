@@ -1,18 +1,19 @@
 const uint8_t echoPin = 8;
 const uint8_t trigPin = 7;
-const int ledPin = 13;
-
+const int LED = 13;
+const int threshold = 40;
 long duration;
 float distance;
 
 void setup(){
   pinMode(trigPin,OUTPUT);
   pinMode(echoPin,INPUT);
-  pinMode(ledPin, OUTPUT);
+  pinMode(LED, OUTPUT);
   Serial.begin(9600);
 }
 
 void loop(){
+  digitalWrite(LED,LOW);
   digitalWrite(trigPin, LOW);
   delay(2);
   digitalWrite(trigPin, HIGH);
@@ -23,4 +24,9 @@ void loop(){
   Serial.print("Duration:");
   Serial.println(distance);
   delay(100);
+  if(distance < threshold){
+    digitalWrite(LED, HIGH);
+    Serial.println("LED Triggered");
+    delay(500);
+  }
 }
